@@ -143,7 +143,7 @@ Nmap done: 1 IP address (1 host up) scanned in 22.45 seconds
 > 80/tcp    open  http       Apache httpd 2.2.3
 > 443/tcp   open  ssl/http   Apache httpd 2.2.3 ((CentOS))
 
-![](https://static.zenn.studio/user-upload/ac1e6fac896a-20260827.png)
+![](/images/beep-login.png)
 *ログイン画面*
 
 ログイン画面自体にはバージョン番号までは表示されない。デフォルト認証情報(admin:admin等)も試したが突破できなかったので、gobusterでディレクトリ探索へ。
@@ -201,12 +201,12 @@ Finished
 
 ブラウザでアクセスすると、Basic認証のダイアログが出てきた。
 
-![](https://static.zenn.studio/user-upload/4eb47e244a06-20260827.png)
+![](/images/beep-basic-auth.png)
 */admin/へ遷移するとBasic認証ダイアログが*
 
 一旦なにもいれずキャンセルを押下。（当然）401エラー画面となる。
 
-![](https://static.zenn.studio/user-upload/997ad2c85d2f-20260827.png)
+![](/images/beep-401.png)
 *認証成功していないため401エラー*
 
 :::details なぜ認証をキャンセルしたのか
