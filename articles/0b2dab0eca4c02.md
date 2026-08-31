@@ -14,6 +14,7 @@ published: true
 - 得に、用語解説などは「そういうニュアンスのワードね、おkおk」くらいの温度感で読むことを推奨します。
 
 ## Machine Profile
+![icon](https://cdn.services-k8s.prod.aws.htb.systems/content/machines/avatar/9e4d90d7-9551-4a99-8df6-e48b2c403aca.png)
 
 Machine Name: Beep
 Difficulty: Easy
