@@ -3,7 +3,7 @@ title: "セイコーマートアプリの不正アクセス(約57万人)をさ�
 emoji: "🏪"
 type: "idea"
 topics: ["セキュリティ", "インシデント", "情報漏えい"]
-published: true
+published: false
 ---
 
 ## はじめに
