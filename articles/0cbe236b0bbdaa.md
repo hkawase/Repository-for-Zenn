@@ -3,7 +3,7 @@ title: "京王グループのランサムウェア被害をさくっとまとめ
 emoji: "🚃"
 type: "idea"
 topics: ["セキュリティ", "インシデント", "ランサムウェア"]
-published: true
+published: false
 ---
 
 ## はじめに
